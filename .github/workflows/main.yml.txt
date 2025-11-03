@@ -1,0 +1,69 @@
+name: Pipeline de CI/CD da Aula
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # 1. Nó que você já tinha (Build e Log)
+  build-e-log:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v3
+
+      - name: Mostrar arquivos e informações
+        run: |
+          echo "Etapa de Build e Log... OK!"
+          ls -la
+
+  # 2. NOVO NÓ: SAST (Análise Estática) com GitHub CodeQL
+  sast-scan:
+    name: SAST Scan (CodeQL)
+    # Garante que este nó só rode DEPOIS do 'build-e-log' [cite: 1282-1284]
+    needs: build-e-log
+    runs-on: ubuntu-latest
+    
+    # Permissões necessárias para o CodeQL escrever os resultados
+    permissions:
+      security-events: write
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v3
+
+      - name: Inicializar o CodeQL (ferramenta SAST nativa do GitHub)
+        uses: github/codeql-action/init@v2
+        with:
+          # Seu código é HTML/CSS, que o CodeQL analisa como javascript
+          languages: javascript
+
+      - name: Executar a análise do CodeQL
+        uses: github/codeql-action/analyze@v2
+
+  # 3. NOVO NÓ: DAST (Análise Dinâmica) com OWASP ZAP
+  dast-scan:
+    name: DAST Scan (OWASP ZAP)
+    # Garante que este nó também rode DEPOIS do 'build-e-log' [cite: 1282-1284]
+    needs: build-e-log
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v3
+
+      - name: Instalar um servidor web simples
+        run: npm install -g http-server
+
+      - name: Iniciar o servidor em background
+        run: http-server . &
+
+      - name: Esperar 5 segundos para o servidor iniciar
+        run: sleep 5
+
+      - name: Executar o DAST (OWASP ZAP Baseline Scan)
+        uses: owasp/zap-baseline-scan@v0.1.1
+        with:
+          target: 'http://localhost:8080'
+          fail_action: false
