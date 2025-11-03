@@ -22,11 +22,10 @@ jobs:
   # 2. NOVO NÓ: SAST (Análise Estática) com GitHub CodeQL
   sast-scan:
     name: SAST Scan (CodeQL)
-    # Garante que este nó só rode DEPOIS do 'build-e-log' [cite: 1282-1284]
+    # Garante que este nó só rode DEPOIS do 'build-e-log'
     needs: build-e-log
     runs-on: ubuntu-latest
-    
-    # Permissões necessárias para o CodeQL escrever os resultados
+
     permissions:
       security-events: write
 
@@ -37,7 +36,6 @@ jobs:
       - name: Inicializar o CodeQL (ferramenta SAST nativa do GitHub)
         uses: github/codeql-action/init@v2
         with:
-          # Seu código é HTML/CSS, que o CodeQL analisa como javascript
           languages: javascript
 
       - name: Executar a análise do CodeQL
@@ -46,7 +44,7 @@ jobs:
   # 3. NOVO NÓ: DAST (Análise Dinâmica) com OWASP ZAP
   dast-scan:
     name: DAST Scan (OWASP ZAP)
-    # Garante que este nó também rode DEPOIS do 'build-e-log' [cite: 1282-1284]
+    # Garante que este nó também rode DEPOIS do 'build-e-log'
     needs: build-e-log
     runs-on: ubuntu-latest
     steps:
